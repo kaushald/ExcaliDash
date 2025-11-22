@@ -1,48 +1,74 @@
-<img src="logoExcaliDash.png" alt="[Image Description]" width="80" height="88">
+<img src="logoExcaliDash.png" alt="ExcaliDash Logo" width="80" height="88">
 
 # ExcaliDash v0.1.0
 
-A self hosted dashboard and organizer for [Excalidraw](https://github.com/excalidraw/excalidraw) with live collaboration.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com)
+
+A self-hosted dashboard and organizer for [Excalidraw](https://github.com/excalidraw/excalidraw) with live collaboration features.
+
+## Screenshots
+
 ![](dashboard.png)
 
 ![](demo.gif)
 
-[Features](#Features)
+## Table of Contents
 
-[Installation](#Installation)
+- [Features](#features)
+- [Installation](#installation)
+  - [Docker Hub (Recommended)](#dockerhub-recommended)
+  - [Docker Build](#docker-build)
+- [Development](#development)
+  - [Clone the Repository](#clone-the-repository)
+  - [Frontend](#frontend)
+  - [Backend](#backend)
+  - [Project Structure](#project-structure)
+- [Credits](#credits)
 
-[Development](#Development)
+## Features
 
-[Credits](#Credits)
-
-# Features
-
-## Persistent storage for all your drawings
+<details>
+<summary>Persistent storage for all your drawings</summary>
 
 ![](dashboardLight.png)
 
-## Real time collaboration
+</details>
+
+<details>
+<summary>Real time collaboration</summary>
 
 ![](collabDemo.gif)
 
-## Search your drawings
+</details>
+
+<details>
+<summary>Search your drawings</summary>
 
 ![](searchPage.png)
 
-## Drag and drop drawings into collections
+</details>
+
+<details>
+<summary>Drag and drop drawings into collections</summary>
 
 ![](collectionsPage.png)
 
-## Export/import your drawings and databases for backup
+</details>
+
+<details>
+<summary>Export/import your drawings and databases for backup</summary>
 
 ![](settingsPage.png)
+
+</details>
 
 # Installation
 
 > [!CAUTION]
 > NOT for production use. This is just a side project (and also the first release), and it likely contains some bugs.
 
-## Dockerhub (recommended)
+## Docker Hub (Recommended)
 
 [Install Docker](https://docs.docker.com/desktop/)
 
@@ -59,7 +85,7 @@ docker compose -f docker-compose.prod.yml up -d
 # Access the frontend at localhost:6767
 ```
 
-## Docker build
+## Docker Build
 
 [Install Docker](https://docs.docker.com/desktop/)
 
@@ -78,7 +104,7 @@ docker compose up -d
 
 # Development
 
-## Clone the repository
+## Clone the Repository
 
 ```bash
 # Clone the repository (recommended)
@@ -116,7 +142,7 @@ npx prisma db push
 npm run dev
 ```
 
-## Structure
+## Project Structure
 
 ```
 ExcaliDash/
