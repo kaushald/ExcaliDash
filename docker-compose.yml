@@ -1,13 +1,14 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: kaushald/excalidash-backend:latest
     container_name: excalidash-backend
     environment:
       - DATABASE_URL=file:/app/prisma/dev.db
       - PORT=8000
       - NODE_ENV=production
+      # Authentication - CHANGE THESE IN PRODUCTION!
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=changeme123
     volumes:
       - backend-data:/app/prisma
     networks:
@@ -26,9 +27,7 @@ services:
       retries: 3
 
   frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
+    image: kaushald/excalidash-frontend:latest
     container_name: excalidash-frontend
     ports:
       - "6767:80"

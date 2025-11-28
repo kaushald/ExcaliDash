@@ -18,7 +18,9 @@
     "@types/multer": "^2.0.0",
     "@types/socket.io": "^3.0.1",
     "archiver": "^7.0.1",
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.4.6",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dompurify": "^3.3.0",
     "dotenv": "^17.2.3",
@@ -30,6 +32,8 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.1",
