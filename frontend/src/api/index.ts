@@ -5,7 +5,46 @@ export const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true, // Send cookies with requests
 });
+
+// Handle 401 responses globally - redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Redirect to login if not already there
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// --- Auth ---
+
+export const login = async (username: string, password: string) => {
+  const response = await api.post<{ success: boolean }>("/auth/login", {
+    username,
+    password,
+  });
+  return response.data;
+};
+
+export const logout = async () => {
+  const response = await api.post<{ success: boolean }>("/auth/logout");
+  return response.data;
+};
+
+export const checkAuth = async (): Promise<boolean> => {
+  try {
+    const response = await api.get<{ authenticated: boolean }>("/auth/check");
+    return response.data.authenticated;
+  } catch {
+    return false;
+  }
+};
 
 const coerceTimestamp = (value: string | number | Date): number => {
   if (typeof value === "number") return value;

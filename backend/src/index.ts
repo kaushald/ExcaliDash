@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
@@ -10,6 +11,17 @@ import { Worker } from "worker_threads";
 import multer from "multer";
 import archiver from "archiver";
 import { z } from "zod";
+import {
+  initializeAuth,
+  requireAuth,
+  loginRateLimit,
+  verifyCredentials,
+  createSession,
+  destroySession,
+  getSession,
+  getCookieOptions,
+  SESSION_COOKIE_NAME,
+} from "./auth";
 // @ts-ignore
 import { PrismaClient } from "./generated/client";
 import {
@@ -143,6 +155,7 @@ app.use(
 );
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(cookieParser());
 
 // Log large requests for monitoring and debugging
 app.use((req, res, next) => {
@@ -413,6 +426,38 @@ interface User {
 
 const roomUsers = new Map<string, User[]>();
 
+// Socket.io authentication middleware
+io.use((socket, next) => {
+  const cookieHeader = socket.handshake.headers.cookie;
+
+  if (!cookieHeader) {
+    return next(new Error("Authentication required"));
+  }
+
+  // Parse session cookie from cookie header
+  const cookies = cookieHeader.split(";").reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split("=");
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const sessionId = cookies[SESSION_COOKIE_NAME];
+
+  if (!sessionId) {
+    return next(new Error("Authentication required"));
+  }
+
+  const session = getSession(sessionId);
+
+  if (!session) {
+    return next(new Error("Session expired"));
+  }
+
+  // Attach session to socket for later use
+  (socket as any).session = session;
+  next();
+});
+
 io.on("connection", (socket) => {
   socket.on(
     "join-room",
@@ -476,10 +521,87 @@ io.on("connection", (socket) => {
   });
 });
 
-// Health check endpoint
+// ============================================================
+// AUTHENTICATION ROUTES (Unprotected)
+// ============================================================
+
+// POST /auth/login
+app.post("/auth/login", loginRateLimit, async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Input validation (don't reveal which field is wrong)
+    if (
+      !username ||
+      !password ||
+      typeof username !== "string" ||
+      typeof password !== "string"
+    ) {
+      // Add artificial delay to prevent timing attacks on validation
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const isValid = await verifyCredentials(username, password);
+
+    if (!isValid) {
+      // Generic error message (don't reveal if username exists)
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Create session
+    const session = createSession();
+
+    // Set cookie
+    res.cookie(SESSION_COOKIE_NAME, session.id, getCookieOptions());
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("[AUTH] Login error:", error);
+    res.status(500).json({ error: "Authentication failed" });
+  }
+});
+
+// POST /auth/logout
+app.post("/auth/logout", (req, res) => {
+  const sessionId = req.cookies?.[SESSION_COOKIE_NAME];
+
+  if (sessionId) {
+    destroySession(sessionId);
+  }
+
+  // Clear cookie regardless
+  res.clearCookie(SESSION_COOKIE_NAME, getCookieOptions(0));
+  res.json({ success: true });
+});
+
+// GET /auth/check - Check authentication status
+app.get("/auth/check", (req, res) => {
+  const sessionId = req.cookies?.[SESSION_COOKIE_NAME];
+
+  if (!sessionId) {
+    return res.json({ authenticated: false });
+  }
+
+  const session = getSession(sessionId);
+
+  if (!session) {
+    res.clearCookie(SESSION_COOKIE_NAME, getCookieOptions(0));
+    return res.json({ authenticated: false });
+  }
+
+  res.json({ authenticated: true });
+});
+
+// Health check endpoint (ALWAYS UNPROTECTED for load balancers)
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
+
+// ============================================================
+// PROTECTED ROUTES - Apply auth middleware to all routes below
+// ============================================================
+app.use(requireAuth);
 
 // --- Drawings ---
 
@@ -1088,8 +1210,16 @@ const ensureTrashCollection = async () => {
 };
 
 httpServer.listen(PORT, async () => {
-  // Initialize upload directory asynchronously to avoid blocking startup
-  await initializeUploadDir();
-  await ensureTrashCollection();
-  console.log(`Server running on port ${PORT}`);
+  try {
+    // Initialize authentication FIRST
+    await initializeAuth();
+
+    // Initialize upload directory asynchronously to avoid blocking startup
+    await initializeUploadDir();
+    await ensureTrashCollection();
+    console.log(`Server running on port ${PORT}`);
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 });
