@@ -18,6 +18,7 @@ A self-hosted dashboard and organizer for [Excalidraw](https://github.com/excali
 
 - [Screenshots](#screenshots)
 - [Features](#features)
+- [Authentication](#authentication)
 - [Upgrading](#upgrading)
 - [Installation](#installation)
   - [Docker Hub (Recommended)](#dockerhub-recommended)
@@ -65,6 +66,38 @@ A self-hosted dashboard and organizer for [Excalidraw](https://github.com/excali
 ![](settingsPage.png)
 
 </details>
+
+## Authentication
+
+ExcaliDash includes built-in authentication to protect your drawings. All endpoints require authentication except the health check.
+
+### Configuration
+
+Set the admin credentials via environment variables:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ADMIN_USERNAME` | Admin username | `admin` |
+| `ADMIN_PASSWORD` | Admin password | `changeme123` |
+
+### Docker Compose
+
+Update the credentials in your `docker-compose.yml`:
+
+```yaml
+services:
+  backend:
+    environment:
+      - ADMIN_USERNAME=your_username
+      - ADMIN_PASSWORD=your_secure_password
+```
+
+### Security Features
+
+- Passwords are hashed using bcrypt (12 rounds)
+- Session cookies are httpOnly, Secure, and SameSite=Strict
+- Rate limiting: 5 login attempts per 15 minutes per IP
+- Sessions expire after 24 hours
 
 # Upgrading
 
